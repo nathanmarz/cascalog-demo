@@ -1,6 +1,6 @@
 (ns cascalog-demo.demo
   (:use cascalog.api)
-  (:require [cascalog [workflow :as w] [predicate :as p] [vars :as v] [ops :as c]])
+  (:require [cascalog [vars :as v] [ops :as c]])
   (:gen-class))
 
 (defn textline-parsed [dir num-fields]
@@ -17,22 +17,22 @@
     (<- [?person ?action ?time] (source ?person ?action ?time-str)
                                 (to-long ?time-str :> ?time) (:distinct false))))
 
-(w/defbufferop mk-feed [tuples]
+(defbufferop mk-feed [tuples]
   [(pr-str (take 5 tuples))])
 
-(defn action-score [now-ms folls time-ms]
+(defn action-score [now-ms followers time-ms]
   (let [days-delta (div (- now-ms time-ms) 86400000)]
-    (div folls (+ days-delta 1))))
+    (div followers (+ days-delta 1))))
 
 (defn compute-news-feed [output-tap follows-dir action-dir]
   (let [follows (follows-data follows-dir)
         action (action-data action-dir)
-        follower-count (<- [?p ?c] (follows ?p2 ?p) (c/count ?c))]
-    (?<- output-tap [?p ?feed] (follows ?p ?p2) (action ?p2 ?action ?time)
-                               (follower-count ?p2 ?folls)
-                               (action-score (System/currentTimeMillis) ?folls ?time :> ?score)
+        follower-count (<- [?person ?count] (follows ?person2 ?person) (c/count ?count))]
+    (?<- output-tap [?person ?feed] (follows ?person ?person2) (action ?person2 ?action ?time)
+                               (follower-count ?person2 ?followers)
+                               (action-score (System/currentTimeMillis) ?followers ?time :> ?score)
                                (:sort ?score) (:reverse true)
-                               (mk-feed ?p2 ?action ?time :> ?feed))))
+                               (mk-feed ?person2 ?action ?time :> ?feed))))
 
 (defn -main [follows-dir action-dir output-dir]
   (compute-news-feed (hfs-textline output-dir) follows-dir action-dir))
