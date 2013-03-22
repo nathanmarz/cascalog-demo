@@ -24,3 +24,4 @@ syntax: glob
 *.settings
 *.pyc
 *.dot
+.lein-repl-history
