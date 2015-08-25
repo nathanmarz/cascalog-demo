@@ -1,12 +1,12 @@
 (ns cascalog-demo.demo
   (:use cascalog.api)
-  (:require [cascalog [vars :as v] [ops :as c]])
+  (:require [cascalog.logic [vars :as v] [ops :as c]])
   (:gen-class))
 
 (defn textline-parsed [dir num-fields]
   (let [outargs (v/gen-nullable-vars num-fields)
         source (hfs-textline dir)]
-    (<- outargs (source ?line) (c/re-parse [#"[^\s]+"] ?line :>> outargs) (:distinct false))))
+    (<- outargs (source ?line) ((c/re-parse #"[^\s]+") ?line :>> outargs) (:distinct false))))
 
 (defn to-long [num] (Long/parseLong num))
 
